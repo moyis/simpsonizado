@@ -1,0 +1,25 @@
+# Episode source files
+episodes/
+
+# Extracted frames
+public/frames/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+.pytest_cache/
+
+# IDE
+.idea/
+
+# Whisper-generated subtitles
+data/whisper_srt/
+
+# OS
+.DS_Store
+
+frontend/node_modules/
+frontend/dist/
+frontend/.env

@@ -1,0 +1,51 @@
+---
+import Layout from '../../../layouts/Layout.astro'
+import { createSearchService } from '../../../lib/search-factory'
+import { framePath, formatTimestamp } from '../../../lib/format'
+
+export const prerender = false
+
+const { episode, frame: frameParam } = Astro.params
+const frameNumber = parseInt(frameParam ?? '', 10)
+
+if (!episode || isNaN(frameNumber)) {
+  return Astro.redirect('/404')
+}
+
+const service = createSearchService()
+const detail = await service.getFrameDetail(episode, frameNumber)
+
+if (!detail) {
+  return new Response(null, { status: 404, statusText: 'Not Found' })
+}
+
+const imgPath = framePath(detail.episodeId, detail.frame)
+const timestamp = formatTimestamp(detail.startMs)
+const episodeLabel = `Temporada ${detail.season}, Episodio ${detail.episode}`
+const searchQuery = Astro.url.searchParams.get('q') ?? ''
+const backHref = searchQuery ? `/?q=${encodeURIComponent(searchQuery)}` : '/'
+---
+
+<Layout title={`${detail.text} — Simpsonizado`}>
+  <div class="mx-auto max-w-3xl px-4 py-6">
+    <a href={backHref} class="inline-block text-ink-muted no-underline mb-6 hover:underline">&larr; Volver a buscar</a>
+
+    <div class="rounded-2xl overflow-hidden shadow-2xl mb-6">
+      <img
+        src={imgPath}
+        alt={detail.text}
+        class="w-full block"
+        transition:name={`frame-${detail.episodeId}-${detail.frame}`}
+      />
+    </div>
+
+    <div class="bg-white rounded-2xl px-8 py-6 shadow-md">
+      <p class="font-heading text-2xl text-ink mb-4 leading-relaxed">"{detail.text}"</p>
+      <div class="flex flex-wrap gap-4 text-ink-muted text-sm">
+        <span class="bg-primary text-ink px-3 py-1 rounded-full font-semibold text-sm">{episodeLabel}</span>
+        {detail.episodeTitle && <span>{detail.episodeTitle}</span>}
+        <span>{timestamp}</span>
+      </div>
+    </div>
+  </div>
+</Layout>

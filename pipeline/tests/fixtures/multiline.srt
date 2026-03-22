@@ -1,0 +1,10 @@
+1
+00:00:01,000 --> 00:00:04,000
+Esta es una línea
+que continúa aquí.
+
+2
+00:00:05,000 --> 00:00:08,000
+Y esta es otra línea
+con tres partes
+en el subtítulo.

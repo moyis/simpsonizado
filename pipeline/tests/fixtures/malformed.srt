@@ -1,0 +1,17 @@
+1
+00:00:01,000 --> 00:00:03,000
+Línea válida.
+
+this is garbage
+
+2
+00:00:05,000 --> 00:00:07,000
+Otra línea válida.
+
+3
+not a timestamp
+Texto sin timestamp.
+
+4
+00:00:10,000 --> 00:00:12,000
+Última línea válida.

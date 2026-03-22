@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #fed41d;
+  --color-surface: #fff9e6;
+  --color-ink: #1a1612;
+  --color-ink-muted: #6b5e52;
+  --font-heading: 'Baloo 2', cursive;
+}
+
+@layer base {
+  html {
+    font-family: system-ui, -apple-system, sans-serif;
+    color: var(--color-ink);
+  }
+
+  body {
+    min-height: 100vh;
+    background-color: var(--color-surface);
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
