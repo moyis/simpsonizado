@@ -1,16 +1,15 @@
 from __future__ import annotations
 
 import json
+import platform
 import subprocess
-
-import mlx_whisper
 
 from pipeline.subtitle_parser import SubtitleEntry
 
 SPANISH_LANGUAGES = {"spa", "es", "esp"}
 COMMENTARY_KEYWORDS = {"commentary", "comentario", "director"}
 
-MODEL_REPOS = {
+MLX_MODEL_REPOS = {
     "tiny": "mlx-community/whisper-tiny",
     "base": "mlx-community/whisper-base-mlx",
     "small": "mlx-community/whisper-small-mlx",
@@ -18,6 +17,20 @@ MODEL_REPOS = {
     "large-v2": "mlx-community/whisper-large-v2-mlx",
     "large-v3": "mlx-community/whisper-large-v3-mlx",
 }
+
+OPENAI_MODEL_NAMES = {
+    "tiny": "tiny",
+    "base": "base",
+    "small": "small",
+    "medium": "medium",
+    "large-v2": "large-v2",
+    "large-v3": "large-v3",
+}
+
+
+def _use_mlx() -> bool:
+    """Use MLX on Apple Silicon, openai-whisper everywhere else."""
+    return platform.system() == "Darwin" and platform.machine() == "arm64"
 
 
 def find_spanish_audio_track(input_path: str) -> str | None:
@@ -67,7 +80,7 @@ def extract_audio(
             "-map", audio_track,
             "-ar", "16000",
             "-ac", "1",
-            "-c:a", "pcm_s16le",
+            "-c:a", "flac",
             output_path,
         ],
         capture_output=True,
@@ -80,14 +93,23 @@ def extract_audio(
         )
 
 
-def load_model(model_size: str) -> str:
-    """Returns the HuggingFace repo path for the given model size."""
-    if model_size not in MODEL_REPOS:
+def load_model(model_size: str) -> object:
+    """Load and return the whisper model (MLX on Apple Silicon, openai-whisper on CUDA)."""
+    if _use_mlx():
+        if model_size not in MLX_MODEL_REPOS:
+            raise ValueError(
+                f"Unknown model size: {model_size}. "
+                f"Choose from: {', '.join(MLX_MODEL_REPOS)}"
+            )
+        return MLX_MODEL_REPOS[model_size]
+
+    import whisper
+    if model_size not in OPENAI_MODEL_NAMES:
         raise ValueError(
             f"Unknown model size: {model_size}. "
-            f"Choose from: {', '.join(MODEL_REPOS)}"
+            f"Choose from: {', '.join(OPENAI_MODEL_NAMES)}"
         )
-    return MODEL_REPOS[model_size]
+    return whisper.load_model(OPENAI_MODEL_NAMES[model_size])
 
 
 SILENCE_GAP_MS = 400
@@ -133,10 +155,9 @@ def _split_segment_by_silence(segment: dict) -> list[SubtitleEntry]:
     return entries
 
 
-def transcribe_audio(
-    audio_path: str, model_repo: str
-) -> list[SubtitleEntry]:
-    result = mlx_whisper.transcribe(
+def _transcribe_mlx(audio_path: str, model_repo: str) -> dict:
+    import mlx_whisper
+    return mlx_whisper.transcribe(
         audio_path,
         path_or_hf_repo=model_repo,
         language="es",
@@ -145,6 +166,26 @@ def transcribe_audio(
         hallucination_silence_threshold=2.0,
         initial_prompt="Los Simpsons. Homero, Marge, Bart, Lisa, Maggie Simpson. Springfield.",
     )
+
+
+def _transcribe_openai(audio_path: str, model: object) -> dict:
+    return model.transcribe(
+        audio_path,
+        language="es",
+        word_timestamps=True,
+        condition_on_previous_text=True,
+        hallucination_silence_threshold=2.0,
+        initial_prompt="Los Simpsons. Homero, Marge, Bart, Lisa, Maggie Simpson. Springfield.",
+    )
+
+
+def transcribe_audio(
+    audio_path: str, model: object
+) -> list[SubtitleEntry]:
+    if _use_mlx():
+        result = _transcribe_mlx(audio_path, model)
+    else:
+        result = _transcribe_openai(audio_path, model)
 
     entries: list[SubtitleEntry] = []
     for segment in result["segments"]:
