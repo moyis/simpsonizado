@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ["nodejs_22"]
+
+[phases.install]
+cmds = ["cd frontend && npm install"]
+
+[phases.build]
+cmds = ["cd frontend && npm run build", "cp data/simpsonizado.db frontend/dist/simpsonizado.db"]
+
+[start]
+cmd = "cd frontend && DATABASE_PATH=./dist/simpsonizado.db npm start"
