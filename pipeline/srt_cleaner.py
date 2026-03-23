@@ -14,6 +14,7 @@ HALLUCINATION_PATTERNS = [
 ]
 
 NAME_CORRECTIONS = {
+    "Mo": "Moe",
     "March": "Marge",
 }
 

@@ -2,7 +2,11 @@ from __future__ import annotations
 
 import json
 import platform
+import re
 import subprocess
+import sys
+import threading
+import time
 
 from pipeline.subtitle_parser import SubtitleEntry
 
@@ -69,10 +73,35 @@ def find_spanish_audio_track(input_path: str) -> str | None:
     return None
 
 
+def _get_duration_seconds(input_path: str) -> float | None:
+    result = subprocess.run(
+        [
+            "ffprobe", "-v", "0",
+            "-show_entries", "format=duration",
+            "-of", "csv=p=0",
+            input_path,
+        ],
+        capture_output=True,
+        text=True,
+    )
+    try:
+        return float(result.stdout.strip())
+    except (ValueError, AttributeError):
+        return None
+
+
+def _format_time(seconds: float) -> str:
+    m, s = divmod(int(seconds), 60)
+    return f"{m}:{s:02d}"
+
+
 def extract_audio(
     input_path: str, audio_track: str, output_path: str
-) -> None:
-    result = subprocess.run(
+) -> float | None:
+    """Extract audio and return duration in seconds."""
+    duration = _get_duration_seconds(input_path)
+
+    proc = subprocess.Popen(
         [
             "ffmpeg",
             "-y",
@@ -81,16 +110,35 @@ def extract_audio(
             "-ar", "16000",
             "-ac", "1",
             "-c:a", "flac",
+            "-progress", "pipe:1",
             output_path,
         ],
-        capture_output=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
         text=True,
     )
 
-    if result.returncode != 0:
+    if duration and proc.stdout:
+        for line in proc.stdout:
+            match = re.match(r"out_time_ms=(\d+)", line.strip())
+            if match:
+                current = int(match.group(1)) / 1_000_000
+                pct = min(current / duration * 100, 100)
+                bar = "█" * int(pct // 2.5) + "░" * (40 - int(pct // 2.5))
+                sys.stderr.write(
+                    f"\r  Audio: {bar} {pct:5.1f}% ({_format_time(current)}/{_format_time(duration)})"
+                )
+                sys.stderr.flush()
+        sys.stderr.write("\n")
+
+    proc.wait()
+    if proc.returncode != 0:
+        stderr = proc.stderr.read() if proc.stderr else ""
         raise RuntimeError(
-            f"Failed to extract audio from {input_path}: {result.stderr}"
+            f"Failed to extract audio from {input_path}: {stderr}"
         )
+
+    return duration
 
 
 def load_model(model_size: str) -> object:
@@ -164,7 +212,7 @@ def _transcribe_mlx(audio_path: str, model_repo: str) -> dict:
         word_timestamps=True,
         condition_on_previous_text=True,
         hallucination_silence_threshold=2.0,
-        initial_prompt="Los Simpsons. Homero, Marge, Bart, Lisa, Maggie Simpson. Springfield.",
+        initial_prompt="Los Simpsons. Homero, Marge, Bart, Lisa, Maggie Simpson. Moe, Barney, Lenny, Carl. Springfield.",
     )
 
 
@@ -175,17 +223,38 @@ def _transcribe_openai(audio_path: str, model: object) -> dict:
         word_timestamps=True,
         condition_on_previous_text=True,
         hallucination_silence_threshold=2.0,
-        initial_prompt="Los Simpsons. Homero, Marge, Bart, Lisa, Maggie Simpson. Springfield.",
+        initial_prompt="Los Simpsons. Homero, Marge, Bart, Lisa, Maggie Simpson. Moe, Barney, Lenny, Carl. Springfield.",
     )
 
 
 def transcribe_audio(
-    audio_path: str, model: object
+    audio_path: str, model: object, duration: float | None = None
 ) -> list[SubtitleEntry]:
-    if _use_mlx():
-        result = _transcribe_mlx(audio_path, model)
-    else:
-        result = _transcribe_openai(audio_path, model)
+    stop_event = threading.Event()
+
+    def _progress_timer():
+        start = time.time()
+        while not stop_event.is_set():
+            elapsed = time.time() - start
+            msg = f"\r  Whisper: {_format_time(elapsed)} elapsed"
+            if duration:
+                msg += f" (audio: {_format_time(duration)})"
+            sys.stderr.write(msg)
+            sys.stderr.flush()
+            stop_event.wait(1)
+        sys.stderr.write("\n")
+
+    timer = threading.Thread(target=_progress_timer, daemon=True)
+    timer.start()
+
+    try:
+        if _use_mlx():
+            result = _transcribe_mlx(audio_path, model)
+        else:
+            result = _transcribe_openai(audio_path, model)
+    finally:
+        stop_event.set()
+        timer.join()
 
     entries: list[SubtitleEntry] = []
     for segment in result["segments"]:

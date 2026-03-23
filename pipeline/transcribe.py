@@ -55,11 +55,11 @@ def process_single_episode(
         with tempfile.TemporaryDirectory() as tmp_dir:
             audio_path = os.path.join(tmp_dir, f"{episode_id}.flac")
 
-            logger.info("[%s] Extracting audio to FLAC...", episode_id)
-            transcriber.extract_audio(input_path, audio_track, audio_path)
+            logger.info("[%s] Extracting audio...", episode_id)
+            duration = transcriber.extract_audio(input_path, audio_track, audio_path)
 
             logger.info("[%s] Transcribing audio...", episode_id)
-            segments = transcriber.transcribe_audio(audio_path, model)
+            segments = transcriber.transcribe_audio(audio_path, model, duration)
 
         logger.info(
             "[%s] Cleaning %d segments...", episode_id, len(segments)
