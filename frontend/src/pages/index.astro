@@ -1,8 +1,28 @@
 ---
 import Layout from '../layouts/Layout.astro'
 import SearchBox from '../components/SearchBox'
+import homeImg from '../assets/home.webp'
 ---
 
 <Layout>
+  <div id="home-hero" class="flex justify-center items-end" style="min-height: calc(100vh - 64px);">
+    <img src={homeImg.src} alt="Simpsonizado" class="max-h-[80vh]" />
+  </div>
   <SearchBox client:load />
+  <script>
+    function toggleHero() {
+      const hero = document.getElementById('home-hero')
+      if (!hero) return
+      const hasQuery = new URLSearchParams(window.location.search).has('q')
+      hero.style.display = hasQuery ? 'none' : ''
+    }
+    toggleHero()
+    window.addEventListener('nav-search', (e: Event) => {
+      const hero = document.getElementById('home-hero')
+      if (!hero) return
+      const value = (e as CustomEvent).detail as string
+      hero.style.display = value.trim() ? 'none' : ''
+    })
+    document.addEventListener('astro:page-load', toggleHero)
+  </script>
 </Layout>

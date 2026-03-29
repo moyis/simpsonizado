@@ -31,8 +31,8 @@ export default function NavSearch() {
     try {
       const res = await fetch('/api/random')
       const data = await res.json()
-      if (data.episodeId && data.frame != null) {
-        window.location.href = `/frame/${data.episodeId}/${data.frame}`
+      if (data.episodeId && data.startMs != null) {
+        window.location.href = `/frame/${data.episodeId}/${data.startMs}`
       }
     } catch {
       // ignore

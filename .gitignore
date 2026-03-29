@@ -15,7 +15,9 @@ __pycache__/
 .idea/
 
 # Whisper-generated subtitles
-data/whisper_srt/
+data/subs/
+data/*.db-shm
+data/*.db-wal
 
 # OS
 .DS_Store

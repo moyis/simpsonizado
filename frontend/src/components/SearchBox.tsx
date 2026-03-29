@@ -70,16 +70,16 @@ export default function SearchBox() {
         <div class="grid grid-cols-2 md:grid-cols-4 gap-2 p-4">
           {results.map((r) => (
             <a
-              key={`${r.episodeId}-${r.frame}`}
-              href={`/frame/${r.episodeId}/${r.frame}?q=${encodeURIComponent(query)}`}
+              key={`${r.episodeId}-${r.startMs}`}
+              href={`/frame/${r.episodeId}/${r.startMs}?q=${encodeURIComponent(query)}`}
               class="no-underline border-2 border-transparent hover:border-primary"
             >
               <img
-                src={framePath(r.episodeId, r.frame)}
+                src={framePath(r.episodeId, r.startMs)}
                 alt={r.text}
                 loading="lazy"
                 class="w-full block aspect-video object-cover"
-                style={`view-transition-name: frame-${r.episodeId}-${r.frame}`}
+                style={`view-transition-name: frame-${r.episodeId}-${r.startMs}`}
               />
             </a>
           ))}

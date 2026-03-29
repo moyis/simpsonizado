@@ -16,12 +16,11 @@ describe('SqliteSearchService', () => {
       const results = await service.search('homero', 5)
       expect(results.length).toBeGreaterThan(0)
       expect(results[0]).toHaveProperty('episodeId')
-      expect(results[0]).toHaveProperty('frame')
+      expect(results[0]).toHaveProperty('startMs')
       expect(results[0]).toHaveProperty('text')
       expect(results[0]).toHaveProperty('season')
       expect(results[0]).toHaveProperty('episode')
       expect(results[0]).toHaveProperty('episodeTitle')
-      expect(results[0]).toHaveProperty('startMs')
     })
 
     it('returns empty array for empty query', async () => {
@@ -44,10 +43,10 @@ describe('SqliteSearchService', () => {
       expect(results.length).toBe(1)
     })
 
-    it('computes mid-frame correctly', async () => {
+    it('returns startMs as a positive number', async () => {
       const results = await service.search('homero', 1)
       expect(results.length).toBe(1)
-      expect(results[0].frame).toBeGreaterThan(0)
+      expect(results[0].startMs).toBeGreaterThan(0)
     })
 
     it('pads results when fewer than limit', async () => {
@@ -57,18 +56,17 @@ describe('SqliteSearchService', () => {
   })
 
   describe('getFrameDetail', () => {
-    it('returns detail for a valid frame within a subtitle range', async () => {
+    it('returns detail for a valid startMs', async () => {
       const searchResults = await service.search('homero', 1)
       expect(searchResults.length).toBe(1)
 
       const detail = await service.getFrameDetail(
         searchResults[0].episodeId,
-        searchResults[0].frame,
+        searchResults[0].startMs,
       )
       expect(detail).not.toBeNull()
       expect(detail!.text).toBe(searchResults[0].text)
-      expect(detail!.startFrame).toBeLessThanOrEqual(detail!.frame)
-      expect(detail!.endFrame).toBeGreaterThanOrEqual(detail!.frame)
+      expect(detail!.startMs).toBe(searchResults[0].startMs)
     })
 
     it('returns null for non-existent episode', async () => {
@@ -76,7 +74,7 @@ describe('SqliteSearchService', () => {
       expect(detail).toBeNull()
     })
 
-    it('returns null for frame out of range', async () => {
+    it('returns null for non-existent startMs', async () => {
       const detail = await service.getFrameDetail('S05E05', 999999)
       expect(detail).toBeNull()
     })
