@@ -5,7 +5,7 @@ let instance: SearchService | null = null
 
 export function createSearchService(): SearchService {
   if (!instance) {
-    const dbPath = process.env.DATABASE_PATH ?? '../data/simpsonizado.db'
+    const dbPath = process.env.DATABASE_PATH ?? 'data/simpsonizado.db'
     instance = new SqliteSearchService(dbPath)
   }
   return instance

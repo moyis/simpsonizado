@@ -2,7 +2,7 @@
 """Build SQLite database from SRT subtitles and verify frame coverage.
 
 Usage:
-    python scripts/build_db.py data/subs --frames-dir exports/frames --db-path data/simpsonizado.db
+    python scripts/build_db.py data/subs --frames-dir exports/frames --db-path frontend/data/simpsonizado.db
 """
 
 from __future__ import annotations
@@ -426,7 +426,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Build SQLite database from SRT subtitles")
     parser.add_argument("subs_dir", help="Directory with SRT files (e.g. S01E01.srt)")
     parser.add_argument("--frames-dir", help="Frames directory for verification")
-    parser.add_argument("--db-path", default="data/simpsonizado.db", help="SQLite path (default: data/simpsonizado.db)")
+    parser.add_argument("--db-path", default="frontend/data/simpsonizado.db", help="SQLite path (default: frontend/data/simpsonizado.db)")
 
     args = parser.parse_args()
     if not os.path.isdir(args.subs_dir):

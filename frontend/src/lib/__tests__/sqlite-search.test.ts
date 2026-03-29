@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest'
 import { SqliteSearchService } from '../sqlite-search'
 import { resolve } from 'path'
 
-const DB_PATH = resolve(__dirname, '../../../../data/simpsonizado.db')
+const DB_PATH = resolve(__dirname, '../../../data/simpsonizado.db')
 
 describe('SqliteSearchService', () => {
   let service: SqliteSearchService

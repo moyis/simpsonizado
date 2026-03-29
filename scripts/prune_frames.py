@@ -4,8 +4,8 @@
 Keeps only frames where timestamp falls within some subtitle's [start_ms, end_ms].
 
 Usage:
-    python scripts/prune_frames.py data/simpsonizado.db frontend/public/frames --dry-run
-    python scripts/prune_frames.py data/simpsonizado.db frontend/public/frames
+    python scripts/prune_frames.py frontend/data/simpsonizado.db frontend/public/frames --dry-run
+    python scripts/prune_frames.py frontend/data/simpsonizado.db frontend/public/frames
 """
 
 import argparse
