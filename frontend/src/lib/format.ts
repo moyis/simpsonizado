@@ -1,5 +1,5 @@
 const FPS = 12
-const FRAMES_BASE = import.meta.env.FRAMES_BASE_URL ?? '/frames'
+const FRAMES_BASE = import.meta.env.PUBLIC_FRAMES_BASE_URL ?? '/frames'
 
 function frameUrl(episodeId: string, ms: number): string {
   return `${FRAMES_BASE}/${episodeId}/frame_${String(ms).padStart(8, '0')}.webp`
